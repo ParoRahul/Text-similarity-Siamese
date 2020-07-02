@@ -22,7 +22,7 @@ class Mymodel(tf.keras.Model):
         self.rate_drop_dense = rate_drop_dense
         self.freature_extratcor= tf.keras.applications.InceptionV3(include_top=False,weights='imagenet')
         self.validation_split_ratio =0.2
-        self.model_save_directory='.'
+        self.model_save_directory='./'
         
     def prepare_tokenizer(self,documents):
         self.tokenizer = tf.keras.preprocessing.text.Tokenizer(num_words=self.vocab_size,
@@ -99,8 +99,8 @@ class Mymodel(tf.keras.Model):
 
         tensorboard = tf.keras.callbacks.TensorBoard(log_dir=checkpoint_dir + "logs/{}".format(time.time()))
 
-        model.fit([img_features_val, text_vector_train], is_similar_train,
-                  validation_data=([val_data_x1, val_data_x2, leaks_val], is_similar_val),
+        model.fit([img_features_train, text_vector_train], is_similar_train,
+                  validation_data=([img_features_val, text_vector_val], is_similar_val),
                   epochs=200, batch_size=16, shuffle=True,
                   callbacks=[early_stopping, model_checkpoint, tensorboard])
 
