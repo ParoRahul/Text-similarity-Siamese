@@ -82,7 +82,7 @@ class Mymodel(tf.keras.Model):
 
     def train(self,imagePath,dictonary,is_similar):
         imagePath_train, imagePath_val, dictonary_train, dictonary_val,is_similar_train, is_similar_val = 
-        =train_test_split(imagePath,dictonary,is_similar,test_size=0.2,random_state=0)
+        train_test_split(imagePath,dictonary,is_similar,test_size=0.2,random_state=0)
         img_features_train, text_vector_train =self.dataPost_processing(imagePath_train,dictonary_train)
         gc.collect()
         img_features_val, text_vector_val =self.dataPost_processing(imagePath_train,dictonary_train)
@@ -104,14 +104,4 @@ class Mymodel(tf.keras.Model):
                   epochs=200, batch_size=16, shuffle=True,
                   callbacks=[early_stopping, model_checkpoint, tensorboard])
 
-        return bst_model_path """
-      
-  
-
-
-
-
-    
-        
-        
-        
+        return bst_model_path
