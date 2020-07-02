@@ -81,7 +81,7 @@ class Mymodel(tf.keras.Model):
         return img_features, text_vector        
 
     def train(self,imagePath,dictonary,is_similar):
-        imagePath_train, imagePath_val, dictonary_train, dictonary_val,is_similar_train, is_similar_val = 
+        imagePath_train, imagePath_val, dictonary_train, dictonary_val,is_similar_train, is_similar_val = \
         train_test_split(imagePath,dictonary,is_similar,test_size=0.2,random_state=0)
         img_features_train, text_vector_train =self.dataPost_processing(imagePath_train,dictonary_train)
         gc.collect()
@@ -99,7 +99,7 @@ class Mymodel(tf.keras.Model):
 
         tensorboard = tf.keras.callbacks.TensorBoard(log_dir=checkpoint_dir + "logs/{}".format(time.time()))
 
-        model.fit([img_features_val, train_data_x2], is_similar_train,
+        model.fit([img_features_val, text_vector_train], is_similar_train,
                   validation_data=([val_data_x1, val_data_x2, leaks_val], is_similar_val),
                   epochs=200, batch_size=16, shuffle=True,
                   callbacks=[early_stopping, model_checkpoint, tensorboard])
