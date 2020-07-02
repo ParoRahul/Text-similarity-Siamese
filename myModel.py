@@ -1,4 +1,4 @@
-import os, time 
+import os, gc,time 
 import tensorflow as tf
 from sklearn.model_selection import train_test_split
 
@@ -33,19 +33,7 @@ class Mymodel(tf.keras.Model):
         self.tokenizer.index_word[0] = '<pad>'
         self.tokenzierCreated = True
 
-    def dataPost_processing(self,image_path, text):
-        #print(len(data))
-        #image_path, text = data[0],data[1]
-        img = tf.io.read_file(image_path)
-        img = tf.image.decode_jpeg(img, channels=3)
-        img = tf.image.resize(img, (299, 299))
-        img = tf.keras.applications.inception_v3.preprocess_input(tf.expand_dims(img, 0))
-        img_features=self.freature_extratcor(img)
-        img_features = tf.reshape(img_features, (img_features.shape[0],img_features.shape[1]*img_features.shape[2]*img_features.shape[3]))
-        text_seqs = self.tokenizer.texts_to_sequences([text])
-        text_vector=tf.keras.preprocessing.sequence.pad_sequences(text_seqs, padding='post', 
-                maxlen=self.max_sequence_length )
-        return img_features, text_vector    
+    
         
     def model(self):
         sequence_1_input = tf.keras.layers.Input(shape=(self.max_sequence_length,), dtype='int32')
@@ -74,21 +62,32 @@ class Mymodel(tf.keras.Model):
         model = tf.keras.Model(inputs=[sequence_1_input, feature_2_input], outputs=preds)
         return model
 
-    def train(self,imagePath,dictonary):
-        imagePath_train, imagePath_val, dictonary_train, dictonary_val = train_test_split(imagePath,dictonary,
-                                                                                  test_size=0.2,random_state=0)
+    def dataPost_processing(self,imagePath, text):
+        for index,image_path in enumerate(imagePath_train):
+            img = tf.io.read_file(image_path)
+            img = tf.image.decode_jpeg(img, channels=3)
+            img = tf.image.resize(img, (299, 299))
+            img = tf.keras.applications.inception_v3.preprocess_input(tf.expand_dims(img,0))
+            img=self.freature_extratcor(img)
+            img = tf.reshape(img, (img.shape[0],img.shape[1]*img.shape[2]*img.shape[3]))
+            if index == 0 :
+                img_features = img
+            else:
+                img_features = tf.concat([img_features,img],0)        
+        
+        text_seqs = self.tokenizer.texts_to_sequences(text)
+        text_vector=tf.keras.preprocessing.sequence.pad_sequences(text_seqs, padding='post', 
+                maxlen=self.max_sequence_length )
+        return img_features, text_vector        
 
-        for a, b in dataset:
-            img_features, text_vector =  self.dataPost_processing(a,b)
-            print(img_features.shape,text_vector.shape)
-        dev_idx = max(1, int(len(dataset) * self.validation_split_ratio))
-        train_data_1, val_data_1 = train_data_1_shuffled[:-dev_idx], train_data_1_shuffled[-dev_idx:]
-        train_data_2, val_data_2 = train_data_2_shuffled[:-dev_idx], train_data_2_shuffled[-dev_idx:]
-        labels_train, labels_val = train_labels_shuffled[:-dev_idx], train_labels_shuffled[-dev_idx:]
-        leaks_train, leaks_val = leaks_shuffled[:-dev_idx], leaks_shuffled[-dev_idx:]
-
-
-        """ model = self.model()  
+    def train(self,imagePath,dictonary,is_similar):
+        imagePath_train, imagePath_val, dictonary_train, dictonary_val,is_similar_train, is_similar_val = 
+        =train_test_split(imagePath,dictonary,is_similar,test_size=0.2,random_state=0)
+        img_features_train, text_vector_train =self.dataPost_processing(imagePath_train,dictonary_train)
+        gc.collect()
+        img_features_val, text_vector_val =self.dataPost_processing(imagePath_train,dictonary_train)
+        gc.collect()
+        model = self.model()  
         model.compile(loss='binary_crossentropy', optimizer='nadam', metrics=['acc'])
         STAMP = 'lstm_%d_%d_%.2f_%.2f' % (self.number_lstm_units, self.number_dense_units, self.rate_drop_lstm, self.rate_drop_dense)
         early_stopping = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=3)
@@ -100,8 +99,8 @@ class Mymodel(tf.keras.Model):
 
         tensorboard = tf.keras.callbacks.TensorBoard(log_dir=checkpoint_dir + "logs/{}".format(time.time()))
 
-        model.fit([train_data_x1, train_data_x2, leaks_train], train_labels,
-                  validation_data=([val_data_x1, val_data_x2, leaks_val], val_labels),
+        model.fit([img_features_val, train_data_x2], is_similar_train,
+                  validation_data=([val_data_x1, val_data_x2, leaks_val], is_similar_val),
                   epochs=200, batch_size=16, shuffle=True,
                   callbacks=[early_stopping, model_checkpoint, tensorboard])
 
