@@ -63,7 +63,7 @@ class Mymodel(tf.keras.Model):
         return model
 
     def dataPost_processing(self,imagePath, text):
-        for index,image_path in enumerate(imagePath_train):
+        for index,image_path in enumerate(imagePath):
             img = tf.io.read_file(image_path)
             img = tf.image.decode_jpeg(img, channels=3)
             img = tf.image.resize(img, (299, 299))
@@ -85,7 +85,7 @@ class Mymodel(tf.keras.Model):
         train_test_split(imagePath,dictonary,is_similar,test_size=0.2,random_state=0)
         img_features_train, text_vector_train =self.dataPost_processing(imagePath_train,dictonary_train)
         gc.collect()
-        img_features_val, text_vector_val =self.dataPost_processing(imagePath_train,dictonary_train)
+        img_features_val, text_vector_val =self.dataPost_processing(imagePath_val,dictonary_val)
         gc.collect()
         model = self.model()  
         model.compile(loss='binary_crossentropy', optimizer='nadam', metrics=['acc'])
