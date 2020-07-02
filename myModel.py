@@ -63,7 +63,7 @@ class Mymodel(tf.keras.Model):
         model = tf.keras.Model(inputs=[sequence_1_input, feature_2_input], outputs=preds)
         return model
 
-    def dataPost_processing(self,imagePath, text):
+    def dataPreProcessing(self,imagePath, text):
         for index,image_path in enumerate(imagePath):
             img = tf.io.read_file(image_path)
             img = tf.image.decode_jpeg(img, channels=3)
@@ -85,9 +85,9 @@ class Mymodel(tf.keras.Model):
 
         imagePath_train, imagePath_val, dictonary_train, dictonary_val,is_similar_train, is_similar_val = \
         train_test_split(imagePath,dictonary,is_similar,test_size=0.2,random_state=0)
-        img_features_train, text_vector_train =self.dataPost_processing(imagePath_train,dictonary_train)
+        img_features_train, text_vector_train =self.dataPreProcessing(imagePath_train,dictonary_train)
         gc.collect()
-        img_features_val, text_vector_val =self.dataPost_processing(imagePath_val,dictonary_val)
+        img_features_val, text_vector_val =self.dataPreProcessing(imagePath_val,dictonary_val)
         gc.collect()
         is_similar_train = np.array(is_similar_train) 
         is_similar_val = np.array(is_similar_val) 
@@ -103,9 +103,23 @@ class Mymodel(tf.keras.Model):
 
         tensorboard = tf.keras.callbacks.TensorBoard(log_dir=checkpoint_dir + "logs/{}".format(time.time()))
 
-        model.fit([img_features_train, text_vector_train], is_similar_train,
-                  validation_data=([img_features_val, text_vector_val], is_similar_val),
-                  epochs=200, batch_size=16, shuffle=True,
+        model.fit([text_vector_train,img_features_train], is_similar_train,
+                  validation_data=([text_vector_val,img_features_val], is_similar_val),
+                  epochs=20, batch_size=16, shuffle=True,
                   callbacks=[early_stopping, model_checkpoint, tensorboard])
 
         return bst_model_path
+
+    def inference(text,imagePath):
+        img = tf.io.read_file(imagePath)
+        img = tf.image.decode_jpeg(img, channels=3)
+        img = tf.image.resize(img, (299, 299))
+        img = tf.keras.applications.inception_v3.preprocess_input(tf.expand_dims(img,0))
+        img=  self.freature_extratcor(img)
+        img = tf.reshape(img, (img.shape[0],img.shape[1]*img.shape[2]*img.shape[3]))
+        text_seqs = self.tokenizer.texts_to_sequences([text])
+        text_vector=tf.keras.preprocessing.sequence.pad_sequences(text_seqs, padding='post', 
+                maxlen=self.max_sequence_length )
+        trained_model = tf.keras.models.load_model(best_model_path)    
+        preds = trained_model.predict([test_data_x1, test_data_x2, leaks_test], verbose=1).ravel() 
+          
