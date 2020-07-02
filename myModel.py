@@ -81,12 +81,15 @@ class Mymodel(tf.keras.Model):
         return img_features, text_vector        
 
     def train(self,imagePath,dictonary,is_similar):
+
         imagePath_train, imagePath_val, dictonary_train, dictonary_val,is_similar_train, is_similar_val = \
         train_test_split(imagePath,dictonary,is_similar,test_size=0.2,random_state=0)
         img_features_train, text_vector_train =self.dataPost_processing(imagePath_train,dictonary_train)
         gc.collect()
         img_features_val, text_vector_val =self.dataPost_processing(imagePath_val,dictonary_val)
         gc.collect()
+        is_similar_train = numpy.array(is_similar_train) 
+        is_similar_val = numpy.array(is_similar_val) 
         model = self.model()  
         model.compile(loss='binary_crossentropy', optimizer='nadam', metrics=['acc'])
         STAMP = 'lstm_%d_%d_%.2f_%.2f' % (self.number_lstm_units, self.number_dense_units, self.rate_drop_lstm, self.rate_drop_dense)
