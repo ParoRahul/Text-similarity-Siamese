@@ -1,4 +1,5 @@
 import os, gc,time 
+import numpy as np
 import tensorflow as tf
 from sklearn.model_selection import train_test_split
 
@@ -88,8 +89,8 @@ class Mymodel(tf.keras.Model):
         gc.collect()
         img_features_val, text_vector_val =self.dataPost_processing(imagePath_val,dictonary_val)
         gc.collect()
-        is_similar_train = numpy.array(is_similar_train) 
-        is_similar_val = numpy.array(is_similar_val) 
+        is_similar_train = np.array(is_similar_train) 
+        is_similar_val = np.array(is_similar_val) 
         model = self.model()  
         model.compile(loss='binary_crossentropy', optimizer='nadam', metrics=['acc'])
         STAMP = 'lstm_%d_%d_%.2f_%.2f' % (self.number_lstm_units, self.number_dense_units, self.rate_drop_lstm, self.rate_drop_dense)
